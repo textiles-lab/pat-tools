@@ -120,8 +120,8 @@ def parse_transform(attrib):
 paths = []
 
 def handle_path(data):
-	print("Path: " + data, file=sys.stderr)
-	print("  transform: " + str(transform), file=sys.stderr)
+	#print("Path: " + data, file=sys.stderr)
+	#print("  transform: " + str(transform), file=sys.stderr)
 
 	#helpers:
 	def trim_wsp():
@@ -161,21 +161,67 @@ def handle_path(data):
 		return apply_transform(transform, pt)
 	
 	def moveto(pt):
-		print("moveto " + str(pt), file=sys.stderr)
+		#print("moveto " + str(pt), file=sys.stderr)
 		nonlocal current
 		nonlocal seg
 		if seg != None:
 			paths.append(list(map(xf, seg)))
-			print("   path:" + str(paths[-1]))
+			#print("   path:" + str(paths[-1]))
 		current = pt
 		seg = [pt]
 
 	def lineto(pt):
-		print("lineto " + str(pt), file=sys.stderr)
+		#print("lineto " + str(pt), file=sys.stderr)
 		nonlocal current
 		nonlocal seg
 		current = pt
 		seg.append(pt)
+	
+	def curveto(xy1, xy2, xy):
+		nonlocal current
+		nonlocal seg
+
+		def subcurveto(xy0, xy1, xy2, xy):
+			xf_xy0 = xf(xy0)
+			xf_xy1 = xf(xy1)
+			xf_xy2 = xf(xy2)
+			xf_xy = xf(xy)
+			length = 0.0
+			length += ((xf_xy1[0] - xf_xy0[0]) ** 2 + (xf_xy1[1] - xf_xy0[1]) ** 2) ** 0.5
+			length += ((xf_xy2[0] - xf_xy1[0]) ** 2 + (xf_xy2[1] - xf_xy1[1]) ** 2) ** 0.5
+			length += ((xf_xy[0] - xf_xy2[0]) ** 2 + (xf_xy[1] - xf_xy2[1]) ** 2) ** 0.5
+			if length > 0.125:
+				m_c1 = (
+					0.5 * (xy1[0] - xy0[0]) + xy0[0],
+					0.5 * (xy1[1] - xy0[1]) + xy0[1]
+				)
+				m_12 = (
+					0.5 * (xy2[0] - xy1[0]) + xy1[0],
+					0.5 * (xy2[1] - xy1[1]) + xy1[1]
+				)
+				m_2e = (
+					0.5 * (xy[0] - xy2[0]) + xy2[0],
+					0.5 * (xy[1] - xy2[1]) + xy2[1]
+				)
+				m_c1_12 = (
+					0.5 * (m_12[0] - m_c1[0]) + m_c1[0],
+					0.5 * (m_12[1] - m_c1[1]) + m_c1[1]
+				)
+				m_12_2e = (
+					0.5 * (m_2e[0] - m_12[0]) + m_12[0],
+					0.5 * (m_2e[1] - m_12[1]) + m_12[1]
+				)
+				m = (
+					0.5 * (m_12_2e[0] - m_c1_12[0]) + m_c1_12[0],
+					0.5 * (m_12_2e[1] - m_c1_12[1]) + m_c1_12[1]
+				)
+				subcurveto(xy0, m_c1, m_c1_12, m)
+				subcurveto(m, m_12_2e, m_2e, xy)
+			else:
+				lineto(xy)
+
+		subcurveto(current, xy1, xy2, xy)
+		current = xy
 	
 	def closepath():
 		nonlocal current
@@ -241,6 +287,37 @@ def handle_path(data):
 					break
 				if cmd.islower(): y += current[1]
 				lineto((x,y))
+		elif cmd == 'c' or cmd == 'C':
+			trim_wsp()
+			xy1 = read_coordinate_pair()
+			trim_wsp_comma_wsp()
+			xy2 = read_coordinate_pair()
+			trim_wsp_comma_wsp()
+			xy = read_coordinate_pair()
+
+			if cmd.islower():
+				xy1 = (xy1[0] + current[0], xy1[1] + current[1])
+				xy2 = (xy2[0] + current[0], xy2[1] + current[1])
+				xy = (xy[0] + current[0], xy[1] + current[1])
+
+			curveto(xy1, xy2, xy)
+
+			while True:
+				trim_wsp_comma_wsp()
+				if data == "": break
+				try:
+					xy1 = read_coordinate_pair()
+					trim_wsp_comma_wsp()
+					xy2 = read_coordinate_pair()
+					trim_wsp_comma_wsp()
+					xy = read_coordinate_pair()
+				except ValueError:
+					break
+				if cmd.islower():
+					xy1 = (xy1[0] + current[0], xy1[1] + current[1])
+					xy2 = (xy2[0] + current[0], xy2[1] + current[1])
+					xy = (xy[0] + current[0], xy[1] + current[1])
+				curveto(xy1, xy2, xy)
 		else:
 			print("Unhandled command '" + cmd + "' in path data.", file=sys.stderr)
 			sys.exit(1)
@@ -281,7 +358,7 @@ def start_element(name, attribs):
 			#set transform for viewBox:
 			transform = [
 				width / w, 0.0, -width / w * x,
-				0.0, height / h, -height / h * y
+				0.0,-height / h, height / h * y + height
 			]
 		else:
 			#transform maps one user unit to one px:
