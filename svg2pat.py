@@ -465,6 +465,8 @@ line = 1
 out_paths = 0
 out_points = 0
 
+CRLF = '\r\n'
+
 for path in paths:
 	#remove duplicate coordinates after rounding:
 	simple = []
@@ -479,8 +481,11 @@ for path in paths:
 		out_paths += 1
 		out_points += len(simple)
 		for i in range(0, len(simple)):
-			if i == 0: print("N" + str(line) + "G0" + simple[i], file=args.patfile)
-			else: print("N" + str(line) + "G1" + simple[i], file=args.patfile)
+			if i == 0: print("N" + str(line) + "G00" + simple[i], file=args.patfile, end=CRLF)
+			else: print("N" + str(line) + "G01" + simple[i], file=args.patfile, end=CRLF)
 			line += 1
+
+print("N" + str(line) + "M02", file=args.patfile, end=CRLF)
+line += 1
 
 print("After rounding for output, had " + str(out_paths) + " paths with " + str(out_points) + " total points.", file=sys.stderr)
