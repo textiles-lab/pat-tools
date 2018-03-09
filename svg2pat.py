@@ -126,15 +126,27 @@ def handle_path(data):
 	#helpers:
 	def trim_wsp():
 		nonlocal data
-		data = re.sub("^[\x20\x09\x0D\x0A]*", "", data)
+		#was: data = re.sub("^[\x20\x09\x0D\x0A]*", "", data)
+		i = 0
+		while i < len(data) and (data[i] == '\x20' or data[i] == '\x09' or data[i] == '\x0D' or data[i] == '\x0A'):
+			i += 1
+		data = data[i:]
 	
 	def trim_wsp_comma_wsp():
 		nonlocal data
-		data = re.sub("^"
-			+ "[\x20\x09\x0D\x0A]*"
-			+ "[\x20\x09\x0D\x0A,]?"
-			+ "[\x20\x09\x0D\x0A]*",
-			"", data)
+		#was: data = re.sub("^"
+		#	+ "[\x20\x09\x0D\x0A]*"
+		#	+ "[\x20\x09\x0D\x0A,]?"
+		#	+ "[\x20\x09\x0D\x0A]*",
+		#	"", data)
+		i = 0
+		while i < len(data) and (data[i] == '\x20' or data[i] == '\x09' or data[i] == '\x0D' or data[i] == '\x0A'):
+			i += 1
+		if i < len(data) and data[i] == ',':
+			i += 1
+		while i < len(data) and (data[i] == '\x20' or data[i] == '\x09' or data[i] == '\x0D' or data[i] == '\x0A'):
+			i += 1
+		data = data[i:]
 
 	def read_number():
 		nonlocal data
@@ -178,6 +190,7 @@ def handle_path(data):
 		seg.append(pt)
 	
 	def curveto(xy1, xy2, xy):
+		#print("curveto " + str(xy1) + " " + str(xy2) + " " + str(xy), file=sys.stderr)
 		nonlocal current
 		nonlocal seg
 
