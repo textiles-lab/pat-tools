@@ -104,7 +104,15 @@ def parse_transform(attrib):
 		xf[2] = float(args[0])
 		if len(args) > 1:
 			xf[5] = float(args[1])
-	#elif op == 'scale':
+	elif op == 'scale':
+		if len(args) < 1 or len(args) > 2:
+			print("translate scale requires one or two arguments, have ", args, file=sys.stderr)
+			sys.exit(1)
+		xf[0] = float(args[0])
+		if len(args) > 1:
+			xf[4] = float(args[1])
+		else:
+			xf[4] = float(args[0])
 	#elif op == 'rotate':
 	#elif op == 'skewX':
 	#elif op == 'skewY':
@@ -361,7 +369,7 @@ def start_element(name, attribs):
 			height = parse_length("1in")
 			print("No height in svg element, assuming 1in", file=sys.stderr)
 		if 'viewBox' in attribs:
-			print("viewBox: ", attribs['viewBox'])
+			#print("viewBox: ", attribs['viewBox'], file=sys.stderr)
 			vals = re.split(r"\s*[\s,]\s*", attribs['viewBox'])
 			assert(len(vals) == 4)
 			x = float(vals[0])
