@@ -361,7 +361,7 @@ def start_element(name, attribs):
 			height = parse_length("1in")
 			print("No height in svg element, assuming 1in", file=sys.stderr)
 		if 'viewBox' in attribs:
-			print("viewBox: ", attribs['viewBox'])
+			#print("viewBox: ", attribs['viewBox'], file=sys.stderr)
 			vals = re.split(r"\s*[\s,]\s*", attribs['viewBox'])
 			assert(len(vals) == 4)
 			x = float(vals[0])
