@@ -173,6 +173,7 @@ def handle_path(data):
 
 	#current point (for relative commands):
 	current = (0.0, 0.0)
+	prev_xy2 = (0.0, 0.0)
 
 	#current path segment:
 	seg = None
@@ -188,6 +189,7 @@ def handle_path(data):
 			paths.append(list(map(xf, seg)))
 			#print("   path:" + str(paths[-1]))
 		current = pt
+		prev_xy2 = pt
 		seg = [pt]
 
 	def lineto(pt):
@@ -195,8 +197,13 @@ def handle_path(data):
 		nonlocal current
 		nonlocal seg
 		current = pt
+		prev_xy2 = pt
 		seg.append(pt)
 	
+	def smoothcurveto(xy2, xy):
+		print("WARNING: smoothcurveto generally doesn't seem to work properly")
+		curveto((2*current[0]-prev_xy2[0], 2*current[1]-prev_xy2[1]),xy2, xy)
+
 	def curveto(xy1, xy2, xy):
 		#print("curveto " + str(xy1) + " " + str(xy2) + " " + str(xy), file=sys.stderr)
 		nonlocal current
@@ -243,6 +250,7 @@ def handle_path(data):
 
 		subcurveto(current, xy1, xy2, xy)
 		current = xy
+		prev_xy2 = xy2
 	
 	def closepath():
 		nonlocal current
@@ -308,6 +316,31 @@ def handle_path(data):
 					break
 				if cmd.islower(): y += current[1]
 				lineto((x,y))
+		elif cmd == 's' or cmd == 'S':
+			trim_wsp()
+			xy2 = read_coordinate_pair()
+			trim_wsp_comma_wsp()
+			xy = read_coordinate_pair()
+
+			if cmd.islower():
+				xy2 = (xy2[0] + current[0], xy2[1] + current[1])
+				xy = (xy[0] + current[0], xy[1] + current[1])
+
+			smoothcurveto(xy2, xy)
+
+			while True:
+				trim_wsp_comma_wsp()
+				if data == "": break
+				try:
+					xy2 = read_coordinate_pair()
+					trim_wsp_comma_wsp()
+					xy = read_coordinate_pair()
+				except ValueError:
+					break
+				if cmd.islower():
+					xy2 = (xy2[0] + current[0], xy2[1] + current[1])
+					xy = (xy[0] + current[0], xy[1] + current[1])
+				smoothcurveto(xy2, xy)
 		elif cmd == 'c' or cmd == 'C':
 			trim_wsp()
 			xy1 = read_coordinate_pair()
