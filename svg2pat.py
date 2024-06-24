@@ -389,6 +389,18 @@ def start_element(name, attribs):
 		transform = multiply_transforms(transform, parsed)
 
 	if name == 'svg':
+		if not 'width' in attribs and not 'height' in attribs and 'viewBox' in attribs:
+			#svgs from illustrator don't have a width or height but do have a viewbox
+			print("WARNING: your svg has a viewBox but no width or height set. (This happens if you export from Illustrator with 'Responsive' checked in the 'More Options' section.) Estimating size from the viewBox (an inexact science).")
+			vals = re.split(r"\s*[\s,]\s*", attribs['viewBox'])
+			assert(len(vals) == 4)
+			x = float(vals[0])
+			y = float(vals[1])
+			w = float(vals[2])
+			h = float(vals[3])
+			attribs['width'] = str(w) + 'px'
+			attribs['height'] = str(h) + 'px'
+
 		if 'width' in attribs:
 			width = parse_length(attribs['width'])
 			print("Width: " + str(width) + "in", file=sys.stderr)
@@ -447,7 +459,8 @@ def start_element(name, attribs):
 		print("TODO: line element", file=sys.stderr)
 		pass
 	elif name == 'polyline':
-		print("TODO: polyline element", file=sys.stderr)
+		print("WARNING: polyine element handling is experimental; try using a path instead.", file=sys.stderr)
+		handle_path('M ' + attribs['points'])
 		pass
 	#ignore other elements:
 	else:
