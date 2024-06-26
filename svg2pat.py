@@ -183,7 +183,7 @@ def handle_path(data):
 	
 	def moveto(pt):
 		#print("moveto " + str(pt), file=sys.stderr)
-		nonlocal current
+		nonlocal current, prev_xy2
 		nonlocal seg
 		if seg != None:
 			paths.append(list(map(xf, seg)))
@@ -194,19 +194,18 @@ def handle_path(data):
 
 	def lineto(pt):
 		#print("lineto " + str(pt), file=sys.stderr)
-		nonlocal current
+		nonlocal current, prev_xy2
 		nonlocal seg
 		current = pt
 		prev_xy2 = pt
 		seg.append(pt)
 	
 	def smoothcurveto(xy2, xy):
-		print("WARNING: smoothcurveto generally doesn't seem to work properly")
 		curveto((2*current[0]-prev_xy2[0], 2*current[1]-prev_xy2[1]),xy2, xy)
 
 	def curveto(xy1, xy2, xy):
 		#print("curveto " + str(xy1) + " " + str(xy2) + " " + str(xy), file=sys.stderr)
-		nonlocal current
+		nonlocal current, prev_xy2
 		nonlocal seg
 
 		def subcurveto(xy0, xy1, xy2, xy):
@@ -253,7 +252,7 @@ def handle_path(data):
 		prev_xy2 = xy2
 	
 	def closepath():
-		nonlocal current
+		nonlocal current, prev_xy2
 		nonlocal seg
 		if seg != None:
 			lineto(seg[0])
