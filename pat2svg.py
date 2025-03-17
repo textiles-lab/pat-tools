@@ -19,7 +19,7 @@ max_x = float('-inf')
 max_y = float('-inf')
 
 for line in args.patfile:
-	m = re.match(r"^N\d+G(\d+)X([\d.+-]+)Y([\d.+-]+)$", line)
+	m = re.match(r"^N\d+G(\d+)X([\d.+-]+)Y([\d.+-]+)\r?$", line)
 	if m == None:
 		print("Unrecognized line: '" + line + "'", file=sys.stderr)
 		continue
